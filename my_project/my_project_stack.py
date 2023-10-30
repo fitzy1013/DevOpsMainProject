@@ -24,20 +24,20 @@ class MyProjectStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # Create the Lambda function
+        # Initial Lamda Function
         function = _lambda.Function(self, "lambda_function",
                                     runtime=_lambda.Runtime.PYTHON_3_10,
                                     handler="index.index_handler",
                                     code=_lambda.Code.from_asset("handler")
                                     )
-
+        # Lambda Function Invoked after the Alarms are triggered
         invoked_function = _lambda.Function(self, "lambda_function_invoked",
                                             runtime=_lambda.Runtime.PYTHON_3_10,
                                             handler="invoked.index_handler",
                                             code=_lambda.Code.from_asset("handler")
                                             )
 
-        # Create the CloudWatchFullAccess policy
+        # CloudWatchFullAccess policy
         cloudwatch_full_access_policy = iam.ManagedPolicy(self, "CloudWatchFullAccessPolicy",
                                                           managed_policy_name="CloudWatchFullAccess",
                                                           statements=[
@@ -47,7 +47,7 @@ class MyProjectStack(Stack):
                                                               )
                                                           ]
                                                           )
-
+        # DynamoDB Full Access Policy
         dynamodb_full_access_policy = iam.ManagedPolicy(self, "DynamoDBFullAccessPolicy",
                                                         managed_policy_name="DynamoDBFullAccess",
                                                         statements=[
@@ -60,15 +60,16 @@ class MyProjectStack(Stack):
 
         # Attach the CloudWatchFullAccess policy to the Lambda function's role
         function.role.add_managed_policy(cloudwatch_full_access_policy)
+        # Attach the DynamoDBFullAccess policy to the Invoked Lambda function's role
         invoked_function.role.add_managed_policy(dynamodb_full_access_policy)
 
-        # Create a CloudWatch Events rule and associate it with the Lambda function
+        # CloudWatch Events rule and associate it with the Lambda function
         rule = events.Rule(self, "schedule_rule",
                            schedule=events.Schedule.rate(Duration.minutes(1)),
                            targets=[targets.LambdaFunction(function)]
                            )
 
-        topic = sns.Topic(self, "MyTopic")
+        topic = sns.Topic(self, "MyTopic") # creation of an SNS topic
 
         # sns.Subscription(self, "EmailSubscription",
         #                  topic=topic,
@@ -76,16 +77,19 @@ class MyProjectStack(Stack):
         #                  protocol=sns.SubscriptionProtocol.EMAIL
         #                  )
 
-        topic.add_subscription(subscriptions.LambdaSubscription(invoked_function))
-        topic.add_subscription(subscriptions.EmailSubscription("liamfitzmaurice@hotmail.com"))
+        topic.add_subscription(subscriptions.LambdaSubscription(invoked_function)) # add the invoked lamda function
+        # as a subscription
+        topic.add_subscription(subscriptions.EmailSubscription("liamfitzmaurice@hotmail.com"))  # add email as a
+        # subscription
 
-        for x in range(4):
-            my_metric = cloudwatch.Metric(
+        for x in range(4): # looping to create the 4 alarms
+            my_metric = cloudwatch.Metric(  # getting the metric
                 namespace=namespace,
                 metric_name=metric_name,
                 dimensions_map={sites[x % 2]: metric_type[0 if (x < 2) else 1]}
             )
 
+            # creating the alarm for the metric
             alarm = cloudwatch.Alarm(self, alarm_names[x],
                                      evaluation_periods=evaluation_periods,
                                      threshold=thresholds[0 if (x < 2) else 1],
@@ -94,6 +98,7 @@ class MyProjectStack(Stack):
                                      actions_enabled=True
                                      )
 
+            # add the alarm to the SNS Topic
             alarm.add_alarm_action(actions.SnsAction(topic))
 
         # my_metric1 = cloudwatch.Metric(

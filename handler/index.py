@@ -14,6 +14,7 @@ metricNamePerm = 'devops'
 http = urllib3.PoolManager()
 
 
+# helper class to save the data fetched from the metric results
 class MetricsResults:
     def __init__(self, url: str, latency: float, status: int):
         self.url = url
@@ -37,7 +38,7 @@ def index_handler(event, context):
 
 
 def getMetrics(url: str) -> MetricsResults:
-    start = time.time()
+    start = time.time()  # records the length of the time to perform the request which will be the latency
     http.request('GET', url)
     end = time.time()
     latency = end - start
@@ -50,7 +51,7 @@ def getMetrics(url: str) -> MetricsResults:
 
 
 def putMetrics(metricName: str, dimensionName: str, dimensionValue: str, value):
-    client_cloudwatch.put_metric_data(
+    client_cloudwatch.put_metric_data(  # posting the metric data to cloudwatch
         Namespace='devops',
         MetricData=[
             {
