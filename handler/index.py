@@ -2,7 +2,6 @@ import time
 from datetime import datetime
 import boto3
 import urllib3
-import myvalues
 
 client_cloudwatch = boto3.client('cloudwatch')
 client_events = boto3.client('events')
