@@ -6,7 +6,7 @@ from aws_cdk import aws_events_targets as targets
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_cloudwatch_actions as actions
-import aws_cdk.aws_sns as sns
+from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as subscriptions
 
 evaluation_periods = 1
